@@ -1,0 +1,1 @@
+# SmartWasteCollSys-MERN-CSSE
