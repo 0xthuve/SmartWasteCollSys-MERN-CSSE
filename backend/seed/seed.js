@@ -2,9 +2,9 @@ require('dotenv').config()
 const mongoose = require('mongoose')
 const fs = require('fs')
 const path = require('path')
-const User = require('./models/User')
-const Bin = require('./models/Bin')
-const Truck = require('./models/Truck')
+const User = require('../models/User')
+const Bin = require('../models/Bin')
+const Truck = require('../models/Truck')
 
 async function seedDatabase() {
   try {
