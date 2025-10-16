@@ -94,56 +94,118 @@ class RouteOptimizer {
     return { route, totalDistance }
   }
 
-  // Optimize routes for multiple trucks
+  // Optimize routes for multiple trucks with priority system
   static optimizeMultiRoute(bins, trucks, depotLocation = 'Kilinochchi Town') {
-    // Filter bins based on priority (>70%)
-    const priorityBins = bins.filter(b => b.fillLevel > 70)
-    // Sort by fill level descending, so 100% first
-    priorityBins.sort((a, b) => b.fillLevel - a.fillLevel)
+    // Filter bins that need collection (>70% fill level)
+    const binsNeedingCollection = bins.filter(b => b.fillLevel > 70)
+
+    // Separate priority bins (100% full) from regular bins (>70% but <100%)
+    const priorityBins = binsNeedingCollection.filter(b => b.fillLevel >= 100)
+    const regularBins = binsNeedingCollection.filter(b => b.fillLevel > 70 && b.fillLevel < 100)
 
     // Get active trucks
     const activeTrucks = trucks.filter(t => t.status === 'Active')
 
     const routes = []
-    let remainingBins = [...priorityBins]
 
-    activeTrucks.forEach((truck) => {
-      if (remainingBins.length === 0) return
+    // If there are priority bins, all trucks go to priority bins first
+    if (priorityBins.length > 0) {
+      // Sort priority bins by fill level (highest first)
+      priorityBins.sort((a, b) => b.fillLevel - a.fillLevel)
 
-      // Assign nearest bins to truck
-      const truckLocation = truck.currentLocation || depotLocation
-      remainingBins.sort((a, b) => this.getDistance(truckLocation, a.locationName) - this.getDistance(truckLocation, b.locationName))
+      activeTrucks.forEach((truck) => {
+        const truckLocation = truck.currentLocation || depotLocation
 
-      // Take first few bins
-      const binsPerTruck = Math.min(remainingBins.length, 5) // Limit per truck
-      const truckBins = remainingBins.splice(0, binsPerTruck)
+        // Find nearest priority bins for this truck
+        const sortedPriorityBins = [...priorityBins].sort((a, b) =>
+          this.getDistance(truckLocation, a.locationName) - this.getDistance(truckLocation, b.locationName)
+        )
 
-      if (truckBins.length > 0) {
-        const { route, totalDistance } = this.optimizeRoute(truckLocation, truckBins)
+        // Take up to 3 priority bins per truck
+        const truckPriorityBins = sortedPriorityBins.splice(0, Math.min(3, sortedPriorityBins.length))
 
-        const stops = route
-          .filter(loc => loc !== truckLocation || route.indexOf(loc) > 0) // Exclude starting point except return
-          .map((locationName, index) => {
-            const bin = truckBins.find(b => b.locationName === locationName)
-            return {
-              sensorId: bin ? bin.sensorId : null,
-              order: index + 1,
-              estimatedTime: Math.round(totalDistance / route.length * 10),
-              locationName
-            }
-          }).filter(stop => stop.sensorId) // Only bin stops
+        if (truckPriorityBins.length > 0) {
+          const { route, totalDistance } = this.optimizeRoute(truckLocation, truckPriorityBins)
 
-        routes.push({
-          truckId: truck._id,
-          truckPlate: truck.plate,
-          binSensorIds: truckBins.map(b => b.sensorId),
-          stops,
-          totalDistance: Math.round(totalDistance * 100) / 100,
-          estimatedTimeMin: Math.round(totalDistance * 6),
-          status: 'planned'
-        })
-      }
-    })
+          const stops = route
+            .filter(loc => loc !== truckLocation || route.indexOf(loc) > 0)
+            .map((locationName, index) => {
+              const bin = truckPriorityBins.find(b => b.locationName === locationName)
+              return {
+                sensorId: bin ? bin.sensorId : null,
+                order: index + 1,
+                estimatedTime: Math.round(totalDistance / route.length * 10),
+                locationName,
+                priority: true
+              }
+            }).filter(stop => stop.sensorId)
+
+          routes.push({
+            truckId: truck._id,
+            truckPlate: truck.plate,
+            binSensorIds: truckPriorityBins.map(b => b.sensorId),
+            stops,
+            totalDistance: Math.round(totalDistance * 100) / 100,
+            estimatedTimeMin: Math.round(totalDistance * 6),
+            status: 'planned',
+            priorityRoute: true
+          })
+
+          // Remove assigned priority bins from the pool
+          truckPriorityBins.forEach(assignedBin => {
+            const index = priorityBins.findIndex(b => b.sensorId === assignedBin.sensorId)
+            if (index > -1) priorityBins.splice(index, 1)
+          })
+        }
+      })
+    }
+
+    // Handle remaining regular bins (>70% but <100%) if no priority bins or after priority bins are handled
+    let remainingBins = priorityBins.length > 0 ? [] : regularBins
+
+    if (remainingBins.length > 0) {
+      // Sort by distance from depot/truck locations
+      activeTrucks.forEach((truck) => {
+        if (remainingBins.length === 0) return
+
+        const truckLocation = truck.currentLocation || depotLocation
+        remainingBins.sort((a, b) =>
+          this.getDistance(truckLocation, a.locationName) - this.getDistance(truckLocation, b.locationName)
+        )
+
+        // Take bins for this truck (up to 5)
+        const binsPerTruck = Math.min(remainingBins.length, 5)
+        const truckBins = remainingBins.splice(0, binsPerTruck)
+
+        if (truckBins.length > 0) {
+          const { route, totalDistance } = this.optimizeRoute(truckLocation, truckBins)
+
+          const stops = route
+            .filter(loc => loc !== truckLocation || route.indexOf(loc) > 0)
+            .map((locationName, index) => {
+              const bin = truckBins.find(b => b.locationName === locationName)
+              return {
+                sensorId: bin ? bin.sensorId : null,
+                order: index + 1,
+                estimatedTime: Math.round(totalDistance / route.length * 10),
+                locationName,
+                priority: false
+              }
+            }).filter(stop => stop.sensorId)
+
+          routes.push({
+            truckId: truck._id,
+            truckPlate: truck.plate,
+            binSensorIds: truckBins.map(b => b.sensorId),
+            stops,
+            totalDistance: Math.round(totalDistance * 100) / 100,
+            estimatedTimeMin: Math.round(totalDistance * 6),
+            status: 'planned',
+            priorityRoute: false
+          })
+        }
+      })
+    }
 
     return routes
   }

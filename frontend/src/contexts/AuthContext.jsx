@@ -55,28 +55,23 @@ export const AuthProvider = ({ children }) => {
 // API service functions
 export const api = {
   // Auth
-  register: (data) => axios.post(`${API_BASE}/api/auth/register`, data),
+  login: (data) => axios.post(`${API_BASE}/api/auth/login`, data),
 
   // Bins
   getBins: () => axios.get(`${API_BASE}/api/bins`),
-  createBin: (data) => axios.post(`${API_BASE}/api/bins`, data),
-  updateBin: (id, data) => axios.put(`${API_BASE}/api/bins/${id}`, data),
-  deleteBin: (id) => axios.delete(`${API_BASE}/api/bins/${id}`),
-  seedBins: () => axios.post(`${API_BASE}/api/bins/seed`),
-  reportBinFill: (data) => axios.post(`${API_BASE}/api/bins/report`, data),
 
   // Trucks
   getTrucks: () => axios.get(`${API_BASE}/api/trucks`),
-  createTruck: (data) => axios.post(`${API_BASE}/api/trucks`, data),
-  updateTruck: (id, data) => axios.put(`${API_BASE}/api/trucks/${id}`, data),
-  deleteTruck: (id) => axios.delete(`${API_BASE}/api/trucks/${id}`),
 
   // Route Plans
   getRoutePlans: () => axios.get(`${API_BASE}/api/routeplans`),
   generateRoutePlan: (data) => axios.post(`${API_BASE}/api/routeplans/generate`, data),
   approveRoutePlan: (id) => axios.post(`${API_BASE}/api/routeplans/${id}/approve`),
   dispatchRoutePlan: (id) => axios.post(`${API_BASE}/api/routeplans/${id}/dispatch`),
-  completeRoutePlan: (id) => axios.post(`${API_BASE}/api/routeplans/${id}/complete`),
+
+  // Collections
+  getCollections: () => axios.get(`${API_BASE}/api/collections`),
+  createCollection: (data) => axios.post(`${API_BASE}/api/collections`, data),
 
   // Reports
   getReports: () => axios.get(`${API_BASE}/api/reports`),

@@ -26,6 +26,8 @@ const binsRouter = require('./routes/bins')
 app.use('/api/bins', binsRouter)
 const routePlansRouter = require('./routes/routeplans')
 app.use('/api/routeplans', routePlansRouter)
+const collectionsRouter = require('./routes/collections')
+app.use('/api/collections', collectionsRouter)
 const reportsRouter = require('./routes/reports')
 app.use('/api/reports', reportsRouter)
 

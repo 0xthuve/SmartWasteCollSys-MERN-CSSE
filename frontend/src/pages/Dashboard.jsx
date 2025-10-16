@@ -19,7 +19,6 @@ import ListAltIcon from '@mui/icons-material/ListAlt'
 import AnalyticsIcon from '@mui/icons-material/QueryStats'
 import MinimizeIcon from '@mui/icons-material/Minimize'
 import { useAuth, api } from '../contexts/AuthContext'
-import io from 'socket.io-client'
 
 function StatCard({ icon, title, value, change, color = 'primary' }) {
   return (
@@ -111,28 +110,10 @@ export default function Dashboard() {
   const [trucks, setTrucks] = useState([])
   const [routePlans, setRoutePlans] = useState([])
   const [notifications, setNotifications] = useState([])
-  const [socket, setSocket] = useState(null)
 
   useEffect(() => {
     loadDashboardData()
-    setupSocket()
-    return () => {
-      if (socket) socket.disconnect()
-    }
   }, [])
-
-  const setupSocket = () => {
-    const newSocket = io('http://localhost:5000')
-    newSocket.on('binUpdate', (updatedBin) => {
-      setBins(prev => prev.map(b => b._id === updatedBin._id ? updatedBin : b))
-      addNotification(`Bin ${updatedBin.sensorId} fill level: ${updatedBin.fillLevel}%`)
-    })
-    newSocket.on('routeDispatched', (data) => {
-      addNotification(`Route plan dispatched to ${data.routes.length} trucks`)
-      loadDashboardData()
-    })
-    setSocket(newSocket)
-  }
 
   const addNotification = (message) => {
     setNotifications(prev => [message, ...prev.slice(0, 4)])
@@ -252,12 +233,12 @@ export default function Dashboard() {
 
       <Grid container spacing={3}>
         {stats.map((s, idx) => (
-          <Grid xs={12} md={6} key={idx}>
+          <Grid size={{ xs: 12, md: 6 }} key={idx}>
             <StatCard {...s} />
           </Grid>
         ))}
 
-        <Grid xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Paper
             sx={{
               p: 3,
@@ -337,7 +318,7 @@ export default function Dashboard() {
           </Paper>
         </Grid>
 
-        <Grid xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper
             sx={{
               p: 3,

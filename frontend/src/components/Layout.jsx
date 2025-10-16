@@ -26,6 +26,7 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping'
 import MapIcon from '@mui/icons-material/Map'
 import ListAltIcon from '@mui/icons-material/ListAlt'
 import AnalyticsIcon from '@mui/icons-material/QueryStats'
+import DeleteIcon from '@mui/icons-material/Delete'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -73,7 +74,7 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
   height: '100%',
   position: 'absolute',
   pointerEvents: 'none',
-  display: 'flex',
+  display: 'flex', 
   alignItems: 'center',
   justifyContent: 'center',
 }))
@@ -360,6 +361,36 @@ export default function Layout({ children }) {
                 primary="Collections"
                 primaryTypographyProps={{
                   fontWeight: isActive('/collections') ? 600 : 400,
+                  fontSize: '0.95rem'
+                }}
+              />
+            </ListItem>
+
+            <ListItem
+              selected={isActive('/bins')}
+              onClick={() => navigate('/bins')}
+              sx={{
+                borderRadius: 2,
+                mb: 1,
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(16, 185, 129, 0.3)',
+                  },
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: isActive('/bins') ? '#10b981' : 'rgba(255,255,255,0.7)', minWidth: 40 }}>
+                <DeleteIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="Bins"
+                primaryTypographyProps={{
+                  fontWeight: isActive('/bins') ? 600 : 400,
                   fontSize: '0.95rem'
                 }}
               />
