@@ -299,9 +299,19 @@ export default function RoutePlanning() {
                   >
                     <ListItemText
                       primary={
-                        <Typography variant="body1" fontWeight={600}>
-                          Plan {plan.mode} - {plan.routes.length} routes
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="body1" fontWeight={600}>
+                            Plan {plan.mode} - {plan.routes.length} routes
+                          </Typography>
+                          {plan.routes.some(r => r.priorityRoute) && (
+                            <Chip
+                              label="PRIORITY"
+                              color="error"
+                              size="small"
+                              sx={{ ml: 2, fontWeight: 700, fontSize: '0.7rem' }}
+                            />
+                          )}
+                        </Box>
                       }
                       secondary={
                         <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
@@ -366,6 +376,14 @@ export default function RoutePlanning() {
                             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                               Truck {route.truckPlate}: {route.stops.length} stops
                             </Typography>
+                            {route.priorityRoute && (
+                              <Chip
+                                label="PRIORITY"
+                                color="error"
+                                size="small"
+                                sx={{ ml: 2, fontWeight: 700, fontSize: '0.7rem' }}
+                              />
+                            )}
                           </Box>
                           <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>
                             {route.stops.map((stop, stopIndex) => (

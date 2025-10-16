@@ -66,8 +66,8 @@ router.post('/report', async (req, res) => {
   try {
     const { sensorId, fillLevel } = req.body
     let status = 'Empty'
-    if (fillLevel >= 70) status = 'Priority'
-    else if (fillLevel >= 50) status = 'Full'
+    if (fillLevel >= 100) status = 'Priority'  // 100% is priority
+    else if (fillLevel >= 70) status = 'Full'  // 70-99% is full but not priority
     else if (fillLevel >= 25) status = 'Half'
     const bin = await Bin.findOneAndUpdate({ sensorId }, { fillLevel, status, lastSeenAt: new Date() }, { new: true })
     if (!bin) return res.status(404).json({ error: 'Bin not found' })

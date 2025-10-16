@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard'
 import TruckManagement from './pages/TruckManagement'
 import RoutePlanning from './pages/RoutePlanning'
 import Collections from './pages/Collections'
+import Bins from './pages/Bins'
 import AnalyticsReports from './pages/AnalyticsReports'
 
 const theme = createTheme({
@@ -120,6 +121,7 @@ function AppContent() {
           <Route path="/trucks" element={<TruckManagement />} />
           <Route path="/routes" element={<RoutePlanning />} />
           <Route path="/collections" element={<Collections />} />
+          <Route path="/bins" element={<Bins />} />
           <Route path="/analytics" element={<AnalyticsReports />} />
           <Route path="*" element={
             <Box sx={{ textAlign: 'center', py: 8 }}>

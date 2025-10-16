@@ -19,8 +19,6 @@ import MenuItem from '@mui/material/MenuItem'
 import TextField from '@mui/material/TextField'
 import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
-import { LineChart } from '@mui/x-charts/LineChart'
-import { BarChart } from '@mui/x-charts/BarChart'
 import { api } from '../contexts/AuthContext'
 
 export default function AnalyticsReports() {
@@ -60,21 +58,6 @@ export default function AnalyticsReports() {
       setError('Failed to generate report')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const mockChartData = {
-    efficiency: {
-      xAxis: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-      series: [
-        { data: [120, 135, 98, 142], label: 'Time Saved (min)' },
-        { data: [45, 52, 38, 61], label: 'Distance Saved (km)' },
-        { data: [3.6, 4.2, 3.0, 4.9], label: 'Fuel Saved (L)' }
-      ]
-    },
-    bins: {
-      xAxis: ['BIN-001', 'BIN-002', 'BIN-003', 'BIN-004', 'BIN-005'],
-      series: [{ data: [75, 82, 45, 68, 91], label: 'Fill Level (%)' }]
     }
   }
 
@@ -162,7 +145,7 @@ export default function AnalyticsReports() {
         </Grid>
 
         {/* Charts and Details */}
-        <Grid xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           {selectedReport ? (
             <Box>
               <Paper sx={{ p: 3, mb: 3 }} elevation={1}>
@@ -175,7 +158,7 @@ export default function AnalyticsReports() {
 
                 {/* Summary Cards */}
                 <Grid container spacing={2} sx={{ mb: 3 }}>
-                  <Grid xs={6} md={3}>
+                  <Grid size={{ xs: 6, md: 3 }}>
                     <Card>
                       <CardContent sx={{ textAlign: 'center' }}>
                         <Typography variant="h5" color="primary.main">
@@ -185,7 +168,7 @@ export default function AnalyticsReports() {
                       </CardContent>
                     </Card>
                   </Grid>
-                  <Grid xs={6} md={3}>
+                  <Grid size={{ xs: 6, md: 3 }}>
                     <Card>
                       <CardContent sx={{ textAlign: 'center' }}>
                         <Typography variant="h5" color="success.main">
@@ -195,7 +178,7 @@ export default function AnalyticsReports() {
                       </CardContent>
                     </Card>
                   </Grid>
-                  <Grid xs={6} md={3}>
+                  <Grid size={{ xs: 6, md: 3 }}>
                     <Card>
                       <CardContent sx={{ textAlign: 'center' }}>
                         <Typography variant="h5" color="warning.main">
@@ -205,7 +188,7 @@ export default function AnalyticsReports() {
                       </CardContent>
                     </Card>
                   </Grid>
-                  <Grid xs={6} md={3}>
+                  <Grid size={{ xs: 6, md: 3 }}>
                     <Card>
                       <CardContent sx={{ textAlign: 'center' }}>
                         <Typography variant="h5" color="info.main">
@@ -216,18 +199,6 @@ export default function AnalyticsReports() {
                     </Card>
                   </Grid>
                 </Grid>
-
-                {/* Charts */}
-                {selectedReport.type === 'efficiency' && (
-                  <Box sx={{ height: 300, mb: 3 }}>
-                    <Typography variant="subtitle1" gutterBottom>Efficiency Trends</Typography>
-                    <LineChart
-                      xAxis={[{ data: mockChartData.efficiency.xAxis }]}
-                      series={mockChartData.efficiency.series}
-                      height={250}
-                    />
-                  </Box>
-                )}
 
                 {/* Bin Performance Table */}
                 {selectedReport.data.binPerformance && selectedReport.data.binPerformance.length > 0 && (
@@ -269,17 +240,6 @@ export default function AnalyticsReports() {
             </Paper>
           )}
 
-          {/* Sample Charts */}
-          <Paper sx={{ p: 3 }} elevation={1}>
-            <Typography variant="h6" gutterBottom>Bin Fill Levels Overview</Typography>
-            <Box sx={{ height: 300 }}>
-              <BarChart
-                xAxis={[{ data: mockChartData.bins.xAxis, scaleType: 'band' }]}
-                series={mockChartData.bins.series}
-                height={250}
-              />
-            </Box>
-          </Paper>
         </Grid>
       </Grid>
     </Box>
