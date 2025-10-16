@@ -183,7 +183,9 @@ export default function Collections() {
                     <TableRow key={bin._id}>
                       <TableCell>{bin.sensorId}</TableCell>
                       <TableCell>
-                        {bin.location.lat.toFixed(4)}, {bin.location.lng.toFixed(4)}
+                        {bin.location && typeof bin.location.lat === 'number' && typeof bin.location.lng === 'number'
+                          ? `${bin.location.lat.toFixed(4)}, ${bin.location.lng.toFixed(4)}`
+                          : 'N/A'}
                       </TableCell>
                       <TableCell>
                         <Box display="flex" alignItems="center" gap={1}>

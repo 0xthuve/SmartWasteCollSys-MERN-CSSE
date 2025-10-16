@@ -30,6 +30,7 @@ const locations = [
   'Elephant Pass', 'Iranamadu', 'Mankulam', 'Puliyankulam', 'Vavuniya Road',
   'Oddusuddan', 'Kanakapuram', 'Karachchi', 'Mallavi', 'Thunukkai'
 ]
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
 export default function TruckManagement() {
   const [trucks, setTrucks] = useState([])
