@@ -1,0 +1,74 @@
+[
+  {
+    "plate": "ABC-1234",
+    "model": "Isuzu NPR",
+    "capacity": "5000",
+    "status": "Active",
+    "driver": {
+      "name": "John Smith",
+      "phone": "+94-77-1234567",
+      "email": "john.smith@wasteco.com"
+    },
+    "currentLocation": "Kilinochchi Town"
+  },
+  {
+    "plate": "DEF-5678",
+    "model": "Tata Ultra",
+    "capacity": "4000",
+    "status": "Active",
+    "driver": {
+      "name": "Sarah Johnson",
+      "phone": "+94-77-2345678",
+      "email": "sarah.johnson@wasteco.com"
+    },
+    "currentLocation": "Paranthan"
+  },
+  {
+    "plate": "GHI-9012",
+    "model": "Ashok Leyland",
+    "capacity": "6000",
+    "status": "Active",
+    "driver": {
+      "name": "Mike Davis",
+      "phone": "+94-77-3456789",
+      "email": "mike.davis@wasteco.com"
+    },
+    "currentLocation": "Poonagary"
+  },
+  {
+    "plate": "JKL-3456",
+    "model": "Mahindra Blazo",
+    "capacity": "4500",
+    "status": "In Maintenance",
+    "driver": {
+      "name": "Lisa Brown",
+      "phone": "+94-77-4567890",
+      "email": "lisa.brown@wasteco.com"
+    },
+    "currentLocation": "Akkarayankulam"
+  },
+  {
+    "plate": "KIL-001",
+    "model": "Isuzu NPR",
+    "capacity": "5000",
+    "status": "Active",
+    "driver": {
+      "name": "Kumar",
+      "phone": "+94-77-9876543",
+      "email": "kumar@kilinochchi.com"
+    },
+    "currentLocation": "Murikandy"
+  },
+  {
+    "plate": "KIL-002",
+    "model": "Tata Ultra",
+    "capacity": "4000",
+    "status": "Active",
+    "driver": {
+      "name": "Ravi",
+      "phone": "+94-77-8765432",
+      "email": "ravi@kilinochchi.com"
+    },
+    "currentLocation": "Kilinochchi Town"
+  }
+]
