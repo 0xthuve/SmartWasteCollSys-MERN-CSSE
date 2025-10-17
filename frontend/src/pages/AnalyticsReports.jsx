@@ -1,247 +1,55 @@
-import React, { useState, useEffect } from 'react'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Box from '@mui/material/Box'
-import Grid from '@mui/material/Grid'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Button from '@mui/material/Button'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import FormControl from '@mui/material/FormControl'
-import InputLabel from '@mui/material/InputLabel'
-import Select from '@mui/material/Select'
-import MenuItem from '@mui/material/MenuItem'
-import TextField from '@mui/material/TextField'
-import Alert from '@mui/material/Alert'
-import CircularProgress from '@mui/material/CircularProgress'
-import { api } from '../contexts/AuthContext'
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, Grid, Alert } from '@mui/material';
+import ReportForm from '../components/ReportForm';
+import ReportTable from '../components/ReportTable';
+import ReportDetails from '../components/ReportDetails';
+import { api } from '../contexts/AuthContext';
 
 export default function AnalyticsReports() {
-  const [reports, setReports] = useState([])
-  const [selectedReport, setSelectedReport] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [reportType, setReportType] = useState('efficiency')
-  const [startDate, setStartDate] = useState(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
+  const [reports, setReports] = useState([]);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    loadReports()
-  }, [])
+    loadReports();
+  }, []);
 
   const loadReports = async () => {
     try {
-      const res = await api.getReports()
-      setReports(res.data)
+      const res = await api.getReports();
+      setReports(res.data);
     } catch (err) {
-      setError('Failed to load reports')
+      setError('Failed to load reports');
     }
-  }
+  };
 
-  const generateReport = async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const res = await api.generateReport({
-        type: reportType,
-        startDate,
-        endDate
-      })
-      setReports(prev => [res.data, ...prev])
-      setSelectedReport(res.data)
-    } catch (err) {
-      setError('Failed to generate report')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const handleReportGenerated = (newReport) => {
+    setReports((prev) => [newReport, ...prev]);
+    setSelectedReport(newReport);
+  };
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>Analytics & Reports</Typography>
+      <Typography variant="h4" gutterBottom>
+        Analytics & Reports
+      </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Grid container spacing={3}>
-        {/* Report Generation */}
-        <Grid xs={12} md={4}>
-          <Paper sx={{ p: 3 }} elevation={1}>
-            <Typography variant="h6" gutterBottom>Generate Report</Typography>
-
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Report Type</InputLabel>
-              <Select value={reportType} onChange={(e) => setReportType(e.target.value)}>
-                <MenuItem value="efficiency">Efficiency Report</MenuItem>
-                <MenuItem value="daily">Daily Summary</MenuItem>
-                <MenuItem value="weekly">Weekly Summary</MenuItem>
-                <MenuItem value="monthly">Monthly Summary</MenuItem>
-              </Select>
-            </FormControl>
-
-            <TextField
-              label="Start Date"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              fullWidth
-              sx={{ mb: 2 }}
-              InputLabelProps={{ shrink: true }}
-            />
-
-            <TextField
-              label="End Date"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              fullWidth
-              sx={{ mb: 2 }}
-              InputLabelProps={{ shrink: true }}
-            />
-
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={generateReport}
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} /> : null}
-            >
-              {loading ? 'Generating...' : 'Generate Report'}
-            </Button>
-          </Paper>
-
-          {/* Reports List */}
-          <Paper sx={{ p: 3, mt: 3 }} elevation={1}>
-            <Typography variant="h6" gutterBottom>Generated Reports</Typography>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Date</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {reports.map((report) => (
-                    <TableRow
-                      key={report._id}
-                      hover
-                      selected={selectedReport?._id === report._id}
-                      onClick={() => setSelectedReport(report)}
-                      sx={{ cursor: 'pointer' }}
-                    >
-                      <TableCell>{report.type}</TableCell>
-                      <TableCell>{new Date(report.generatedAt).toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
+        <Grid item xs={12} md={4}>
+          <ReportForm onReportGenerated={handleReportGenerated} />
+          <ReportTable
+            reports={reports}
+            selectedReport={selectedReport}
+            onSelectReport={setSelectedReport}
+          />
         </Grid>
 
-        {/* Charts and Details */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          {selectedReport ? (
-            <Box>
-              <Paper sx={{ p: 3, mb: 3 }} elevation={1}>
-                <Typography variant="h6" gutterBottom>
-                  {selectedReport.type.toUpperCase()} Report
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Generated: {new Date(selectedReport.generatedAt).toLocaleString()}
-                </Typography>
-
-                {/* Summary Cards */}
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                  <Grid size={{ xs: 6, md: 3 }}>
-                    <Card>
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Typography variant="h5" color="primary.main">
-                          {selectedReport.data.totalCollections || 0}
-                        </Typography>
-                        <Typography variant="body2">Collections</Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid size={{ xs: 6, md: 3 }}>
-                    <Card>
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Typography variant="h5" color="success.main">
-                          {selectedReport.data.totalBinsEmptied || 0}
-                        </Typography>
-                        <Typography variant="body2">Bins Emptied</Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid size={{ xs: 6, md: 3 }}>
-                    <Card>
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Typography variant="h5" color="warning.main">
-                          {selectedReport.data.averageFillLevel || 0}%
-                        </Typography>
-                        <Typography variant="body2">Avg Fill Level</Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid size={{ xs: 6, md: 3 }}>
-                    <Card>
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Typography variant="h5" color="info.main">
-                          {selectedReport.data.efficiency?.timeSaved || 0}min
-                        </Typography>
-                        <Typography variant="body2">Time Saved</Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                </Grid>
-
-                {/* Bin Performance Table */}
-                {selectedReport.data.binPerformance && selectedReport.data.binPerformance.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>Bin Performance</Typography>
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>Bin ID</TableCell>
-                            <TableCell>Location</TableCell>
-                            <TableCell>Avg Fill Rate</TableCell>
-                            <TableCell>Collection Freq</TableCell>
-                            <TableCell>Overflow Incidents</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {selectedReport.data.binPerformance.map((bin) => (
-                            <TableRow key={bin.sensorId}>
-                              <TableCell>{bin.sensorId}</TableCell>
-                              <TableCell>{bin.location.lat.toFixed(4)}, {bin.location.lng.toFixed(4)}</TableCell>
-                              <TableCell>{bin.averageFillRate}%</TableCell>
-                              <TableCell>{bin.collectionFrequency}x</TableCell>
-                              <TableCell>{bin.overflowIncidents}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </Box>
-                )}
-              </Paper>
-            </Box>
-          ) : (
-            <Paper sx={{ p: 3, textAlign: 'center' }} elevation={1}>
-              <Typography variant="h6" color="text.secondary">
-                Select a report to view details and analytics
-              </Typography>
-            </Paper>
-          )}
-
+        <Grid item xs={12} md={8}>
+          <ReportDetails report={selectedReport} />
         </Grid>
       </Grid>
     </Box>
-  )
+  );
 }

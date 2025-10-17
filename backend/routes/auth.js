@@ -1,57 +1,23 @@
+/**
+ * Routes for Authentication operations
+ * Defines REST API endpoints for user authentication and authorization
+ * Uses the layered architecture: Controller → Service → DAO → DB
+ * Follows RESTful conventions and proper security practices
+ */
 const express = require('express')
-const jwt = require('jsonwebtoken')
-const User = require('../models/User')
 const router = express.Router()
+const AuthController = require('../controllers/AuthController')
 
-// Middleware to verify JWT
-const authenticate = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '')
-  if (!token) return res.status(401).json({ error: 'Access denied' })
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret')
-    req.user = decoded
-    next()
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid token' })
-  }
-}
+// Initialize controller
+const authController = new AuthController()
 
-// POST /api/auth/login
-router.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body
-    const user = await User.findOne({ username })
-    if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ error: 'Invalid credentials' })
-    }
-    const token = jwt.sign({ id: user._id, username: user.username, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '24h' })
-    res.json({ token, user: { id: user._id, username: user.username, name: user.name, role: user.role } })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
+// POST /api/auth/login - User login
+router.post('/login', authController.login.bind(authController))
 
-// GET /api/auth/me - verify token and get user info
-router.get('/me', authenticate, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password')
-    if (!user) return res.status(404).json({ error: 'User not found' })
-    res.json({ user: { id: user._id, username: user.username, name: user.name, role: user.role } })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
+// GET /api/auth/me - Get current user info (requires authentication)
+router.get('/me', authController.authenticateMiddleware(), authController.getCurrentUser.bind(authController))
 
-// POST /api/auth/register - for initial admin setup
-router.post('/register', async (req, res) => {
-  try {
-    const { username, password, name } = req.body
-    const user = new User({ username, password, name, role: 'admin' })
-    await user.save()
-    res.status(201).json({ message: 'Admin user created' })
-  } catch (err) {
-    res.status(400).json({ error: err.message })
-  }
-})
+// POST /api/auth/register - Register admin user (initial setup only)
+router.post('/register', authController.registerAdmin.bind(authController))
 
-module.exports = { router, authenticate }
+module.exports = { router }

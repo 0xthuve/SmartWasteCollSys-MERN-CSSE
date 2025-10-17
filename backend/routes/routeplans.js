@@ -1,148 +1,49 @@
+/**
+ * Routes for Route Plan operations
+ * Defines REST API endpoints for route planning and optimization
+ * Uses the layered architecture: Controller → Service → DAO → DB
+ * Follows RESTful conventions and proper error handling
+ */
 const express = require('express')
 const router = express.Router()
-const Bin = require('../models/Bin')
-const RoutePlan = require('../models/RoutePlan')
-const Truck = require('../models/Truck')
-const RouteOptimizer = require('../services/optimizer')
-const { authenticate } = require('./auth')
+const RoutePlanController = require('../controllers/RoutePlanController')
+const AuthController = require('../controllers/AuthController')
 
-// GET /api/routeplans - list
-router.get('/', authenticate, async (req, res) => {
-  try {
-    const plans = await RoutePlan.find().sort({ createdAt: -1 }).populate('routes.truckId')
-    res.json(plans)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
+// Initialize controllers
+const routePlanController = new RoutePlanController()
+const authController = new AuthController()
 
-// POST /api/routeplans/generate - generate a plan. body: { mode: 'real-time'|'predictive' }
-router.post('/generate', authenticate, async (req, res) => {
-  try {
-    const { mode } = req.body
+// Middleware for authentication
+const authenticate = authController.authenticateMiddleware()
 
-    // Get bins and trucks
-    const bins = await Bin.find()
-    const trucks = await Truck.find({ status: 'Active' })
+// GET /api/routeplans - Get all route plans
+router.get('/', authenticate, routePlanController.getAllRoutePlans.bind(routePlanController))
 
-    if (trucks.length === 0) {
-      return res.status(400).json({ error: 'No active trucks available' })
-    }
+// POST /api/routeplans/generate - Generate a new route plan
+router.post('/generate', authenticate, routePlanController.generateRoutePlan.bind(routePlanController))
 
-    // Filter bins based on mode
-    let filteredBins = []
-    if (mode === 'real-time') {
-      filteredBins = bins.filter(b => b.fillLevel > 70)
-    } else {
-      // Predictive: use historical averages or current fill levels
-      filteredBins = bins.filter(b => b.historicalAvgFill > 60 || b.fillLevel > 50)
-    }
+// POST /api/routeplans/:id/approve - Approve a route plan
+router.post('/:id/approve', authenticate, routePlanController.approveRoutePlan.bind(routePlanController))
 
-    if (filteredBins.length === 0) {
-      return res.status(400).json({ error: 'No bins require collection' })
-    }
+// POST /api/routeplans/:id/dispatch - Dispatch a route plan
+router.post('/:id/dispatch', authenticate, routePlanController.dispatchRoutePlan.bind(routePlanController))
 
-    // Optimize routes
-    const routes = RouteOptimizer.optimizeMultiRoute(filteredBins, trucks, 'Kilinochchi Town')
+// POST /api/routeplans/:id/complete - Complete a route plan
+router.post('/:id/complete', authenticate, routePlanController.completeRoutePlan.bind(routePlanController))
 
-    // Sanitize routes to prevent NaN values
-    const sanitizedRoutes = routes.map(route => ({
-      ...route,
-      stops: route.stops.map(stop => ({
-        ...stop,
-        estimatedTime: isNaN(stop.estimatedTime) ? 0 : stop.estimatedTime
-      })),
-      totalDistance: isNaN(route.totalDistance) ? 0 : route.totalDistance,
-      estimatedTimeMin: isNaN(route.estimatedTimeMin) ? 0 : route.estimatedTimeMin
-    }))
+// DELETE /api/routeplans/:id - Delete a route plan
+router.delete('/:id', authenticate, routePlanController.deleteRoutePlan.bind(routePlanController))
 
-    // Calculate efficiency
-    const efficiency = RouteOptimizer.calculateEfficiency(sanitizedRoutes)
+// GET /api/routeplans/:id - Get a specific route plan by ID
+router.get('/:id', authenticate, routePlanController.getRoutePlanById.bind(routePlanController))
 
-    const sanitizedEfficiency = {
-      timeSaved: isNaN(efficiency.timeSaved) ? 0 : efficiency.timeSaved,
-      distanceSaved: isNaN(efficiency.distanceSaved) ? 0 : efficiency.distanceSaved,
-      fuelSaved: isNaN(efficiency.fuelSaved) ? 0 : efficiency.fuelSaved
-    }
+// GET /api/routeplans/status/:status - Get route plans by status
+router.get('/status/:status', authenticate, routePlanController.getRoutePlansByStatus.bind(routePlanController))
 
-    const plan = new RoutePlan({
-      mode,
-      routes: sanitizedRoutes,
-      efficiency: sanitizedEfficiency
-    })
+// GET /api/routeplans/range - Get route plans by date range
+router.get('/range', authenticate, routePlanController.getRoutePlansByDateRange.bind(routePlanController))
 
-    await plan.save()
-
-    // Populate truck details
-    await plan.populate('routes.truckId')
-
-    res.status(201).json(plan)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// POST /api/routeplans/:id/approve - approve plan
-router.post('/:id/approve', authenticate, async (req, res) => {
-  try {
-    const plan = await RoutePlan.findByIdAndUpdate(req.params.id, { approved: true }, { new: true })
-    if (!plan) return res.status(404).json({ error: 'Plan not found' })
-    res.json(plan)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// POST /api/routeplans/:id/dispatch - mock dispatch (sets dispatchedAt)
-router.post('/:id/dispatch', authenticate, async (req, res) => {
-  try {
-    const plan = await RoutePlan.findByIdAndUpdate(req.params.id, { dispatchedAt: new Date() }, { new: true })
-    if (!plan) return res.status(404).json({ error: 'Plan not found' })
-
-    // Update route statuses
-    plan.routes.forEach(route => route.status = 'dispatched')
-    await plan.save()
-
-    // Emit notification to drivers (would integrate with mobile app)
-    req.app.get('io').emit('routeDispatched', {
-      planId: plan._id,
-      routes: plan.routes
-    })
-
-    res.json({ success: true, dispatchedAt: plan.dispatchedAt })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// POST /api/routeplans/:id/complete - mark route as completed
-router.post('/:id/complete', authenticate, async (req, res) => {
-  try {
-    const plan = await RoutePlan.findByIdAndUpdate(
-      req.params.id,
-      {
-        completedAt: new Date(),
-        'routes.$[].status': 'completed'
-      },
-      { new: true }
-    )
-    if (!plan) return res.status(404).json({ error: 'Plan not found' })
-    res.json(plan)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// GET /api/routeplans/kilinochchi - list routes in Kilinochchi district
-router.get('/kilinochchi', authenticate, async (req, res) => {
-  try {
-    const plans = await RoutePlan.find()
-      .sort({ createdAt: -1 })
-      .populate('routes.truckId')
-    res.json(plans)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
+// GET /api/routeplans/stats - Get route plan statistics
+router.get('/stats', authenticate, routePlanController.getRoutePlanStatistics.bind(routePlanController))
 
 module.exports = router

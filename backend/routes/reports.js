@@ -1,100 +1,46 @@
+/**
+ * Routes for Report operations
+ * Defines REST API endpoints for analytics and reporting
+ * Uses the layered architecture: Controller → Service → DAO → DB
+ * Follows RESTful conventions and proper error handling
+ */
 const express = require('express')
 const router = express.Router()
-const Report = require('../models/Report')
-const RoutePlan = require('../models/RoutePlan')
-const Bin = require('../models/Bin')
-const { authenticate } = require('./auth')
+const ReportController = require('../controllers/ReportController')
+const AuthController = require('../controllers/AuthController')
 
-// GET /api/reports - list reports
-router.get('/', authenticate, async (req, res) => {
-  try {
-    const reports = await Report.find().sort({ createdAt: -1 })
-    res.json(reports)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
+// Initialize controllers
+const reportController = new ReportController()
+const authController = new AuthController()
 
-// POST /api/reports/generate - generate a report
-router.post('/generate', authenticate, async (req, res) => {
-  try {
-    const { type, startDate, endDate } = req.body
-    const start = new Date(startDate)
-    const end = new Date(endDate)
+// Middleware for authentication
+const authenticate = authController.authenticateMiddleware()
 
-    // Generate report based on type
-    let reportData = {}
+// GET /api/reports - Get all reports
+router.get('/', authenticate, reportController.getAllReports.bind(reportController))
 
-    if (type === 'efficiency') {
-      // Calculate efficiency metrics from completed routes
-      const completedRoutes = await RoutePlan.find({
-        dispatchedAt: { $gte: start, $lte: end },
-        'routes.status': 'completed'
-      })
+// POST /api/reports/generate - Generate a new report
+router.post('/generate', authenticate, reportController.generateReport.bind(reportController))
 
-      let totalTimeSaved = 0
-      let totalDistanceSaved = 0
-      let totalFuelSaved = 0
+// GET /api/reports/:id - Get a specific report by ID
+router.get('/:id', authenticate, reportController.getReportById.bind(reportController))
 
-      completedRoutes.forEach(plan => {
-        totalTimeSaved += plan.efficiency?.timeSaved || 0
-        totalDistanceSaved += plan.efficiency?.distanceSaved || 0
-        totalFuelSaved += plan.efficiency?.fuelSaved || 0
-      })
+// DELETE /api/reports/:id - Delete a report
+router.delete('/:id', authenticate, reportController.deleteReport.bind(reportController))
 
-      reportData = {
-        totalCollections: completedRoutes.length,
-        efficiency: {
-          timeSaved: totalTimeSaved,
-          distanceSaved: totalDistanceSaved,
-          fuelSaved: totalFuelSaved
-        }
-      }
-    } else {
-      // For daily/weekly/monthly reports
-      const routePlans = await RoutePlan.find({
-        createdAt: { $gte: start, $lte: end }
-      }).populate('routes.truckId')
+// GET /api/reports/type/:type - Get reports by type
+router.get('/type/:type', authenticate, reportController.getLatestReportByType.bind(reportController))
 
-      const bins = await Bin.find()
+// GET /api/reports/date-range - Get reports within a date range
+router.get('/date-range', authenticate, reportController.getDashboardStats.bind(reportController))
 
-      reportData = {
-        totalCollections: routePlans.filter(p => p.dispatchedAt).length,
-        totalBinsEmptied: routePlans.reduce((sum, p) => sum + p.routes.reduce((rSum, r) => rSum + r.binSensorIds.length, 0), 0),
-        averageFillLevel: bins.reduce((sum, b) => sum + b.fillLevel, 0) / bins.length,
-        truckUtilization: [], // Would need more complex aggregation
-        binPerformance: bins.map(b => ({
-          sensorId: b.sensorId,
-          location: b.location,
-          averageFillRate: b.historicalAvgFill,
-          collectionFrequency: 1, // Simplified
-          overflowIncidents: b.fillLevel > 90 ? 1 : 0
-        }))
-      }
-    }
+// GET /api/reports/analytics/overview - Get analytics overview
+router.get('/analytics/overview', authenticate, reportController.getDashboardStats.bind(reportController))
 
-    const report = new Report({
-      type,
-      period: { start, end },
-      data: reportData
-    })
+// GET /api/reports/analytics/efficiency - Get efficiency analytics
+router.get('/analytics/efficiency', authenticate, reportController.generateEfficiencyReport.bind(reportController))
 
-    await report.save()
-    res.status(201).json(report)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// GET /api/reports/:id - get specific report
-router.get('/:id', authenticate, async (req, res) => {
-  try {
-    const report = await Report.findById(req.params.id)
-    if (!report) return res.status(404).json({ error: 'Report not found' })
-    res.json(report)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
+// GET /api/reports/analytics/bin-performance - Get bin performance analytics
+router.get('/analytics/bin-performance', authenticate, reportController.getDashboardStats.bind(reportController))
 
 module.exports = router

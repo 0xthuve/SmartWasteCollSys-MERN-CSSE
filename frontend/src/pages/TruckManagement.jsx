@@ -49,7 +49,12 @@ export default function TruckManagement() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`${API_BASE}/api/trucks`)
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${API_BASE}/api/trucks`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       if (!res.ok) throw new Error('Failed to load trucks')
       const data = await res.json()
       setTrucks(data)
@@ -87,10 +92,14 @@ export default function TruckManagement() {
     }
 
     try {
+      const token = localStorage.getItem('token')
       if (editing) {
         const res = await fetch(`${API_BASE}/api/trucks/${editing}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(form),
         })
         if (!res.ok) throw new Error('Failed to update truck')
@@ -99,7 +108,10 @@ export default function TruckManagement() {
       } else {
         const res = await fetch(`${API_BASE}/api/trucks`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(form),
         })
         if (!res.ok) {
@@ -119,7 +131,13 @@ export default function TruckManagement() {
     if (!confirm('Delete this truck?')) return
     setError('')
     try {
-      const res = await fetch(`${API_BASE}/api/trucks/${id}`, { method: 'DELETE' })
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${API_BASE}/api/trucks/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       if (!res.ok) throw new Error('Failed to delete truck')
       setTrucks((t) => t.filter((tr) => (tr._id || tr.id) !== id))
     } catch (err) {
@@ -215,6 +233,7 @@ export default function TruckManagement() {
                   <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Plate</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Model</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Capacity</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Driver</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Current Location</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Status</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 700, color: 'text.primary' }}>Actions</TableCell>
@@ -261,7 +280,14 @@ export default function TruckManagement() {
                         size="small"
                         onClick={() => {
                           setEditing(truck._id || truck.id)
-                          setForm(truck)
+                          setForm({
+                            plate: truck.plate,
+                            model: truck.model,
+                            capacity: truck.capacity,
+                            status: truck.status,
+                            currentLocation: truck.currentLocation || 'Kilinochchi Town',
+                            driver: truck.driver || { name: '', phone: '', email: '' }
+                          })
                           setDialogOpen(true)
                         }}
                         sx={{

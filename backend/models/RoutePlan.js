@@ -12,11 +12,13 @@ const RoutePlanSchema = new mongoose.Schema({
         sensorId: String,
         order: Number,
         estimatedTime: Number, // minutes
-        locationName: String
+        locationName: String,
+        priority: { type: Boolean, default: false } // Whether this is a priority stop (100% bin)
       }],
       totalDistance: { type: Number, default: 0 }, // km
       estimatedTimeMin: Number,
-      status: { type: String, enum: ['planned', 'dispatched', 'in-progress', 'completed'], default: 'planned' }
+      status: { type: String, enum: ['planned', 'dispatched', 'in-progress', 'completed'], default: 'planned' },
+      priorityRoute: { type: Boolean, default: false } // Whether this route contains priority bins
     }
   ],
   approved: { type: Boolean, default: false },

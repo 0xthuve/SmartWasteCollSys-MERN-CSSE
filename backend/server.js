@@ -4,12 +4,13 @@ const mongoose = require('mongoose')
 const cors = require('cors')
 const { createServer } = require('http')
 const { Server } = require('socket.io')
+const connectDB = require('./config/db')
 
 const app = express()
 const server = createServer(app)
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: [process.env.VITE_APP_FRONTEND_URL || "http://localhost:5173"],
     methods: ["GET", "POST"]
   }
 })
@@ -30,6 +31,10 @@ const collectionsRouter = require('./routes/collections')
 app.use('/api/collections', collectionsRouter)
 const reportsRouter = require('./routes/reports')
 app.use('/api/reports', reportsRouter)
+const truckAllocationRouter = require('./routes/truckallocation')
+app.use('/api/truck-allocation', truckAllocationRouter)
+const predictiveRoutingRouter = require('./routes/predictiverouting')
+app.use('/api/predictive-routing', predictiveRoutingRouter)
 
 // Default route
 app.get('/', (req, res) => res.send('Hello, Node.js Backend is running!'))
@@ -46,15 +51,9 @@ io.on('connection', (socket) => {
 // Make io available in routes
 app.set('io', io)
 
-// Connect to MongoDB and start server
-const PORT = process.env.PORT || 5000
-const MONGO = process.env.MONGO_URI || 'mongodb://localhost:27017/route_opt'
+// Connect to MongoDB
+connectDB()
 
-mongoose.connect(MONGO, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
-    console.log('Connected to MongoDB')
-    server.listen(PORT, () => console.log(`Server started on http://localhost:${PORT}`))
-  })
-  .catch((err) => {
-    console.error('Failed to connect to MongoDB', err)
-  })
+// Start server
+const PORT = process.env.PORT || 5000
+server.listen(PORT, () => console.log(`Server started on http://localhost:${PORT}`))

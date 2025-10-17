@@ -27,6 +27,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Snackbar,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -42,12 +43,15 @@ export default function Collections() {
   const [routePlans, setRoutePlans] = useState([]);
   const [collections, setCollections] = useState([]);
   const [trucks, setTrucks] = useState([]);
-  const [error, setError] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'error'
+  });
   const [newCollection, setNewCollection] = useState({
     truck: '',
-    bins: [],
     generalWaste: 0,
     recyclables: 0,
     organic: 0,
@@ -70,9 +74,12 @@ export default function Collections() {
       setRoutePlans(plansRes.data || []);
       setCollections(collectionsRes.data || []);
       setTrucks(trucksRes.data || []);
-      setError("");
     } catch (err) {
-      setError("Failed to load collection data");
+      setSnackbar({
+        open: true,
+        message: 'Failed to load collection data',
+        severity: 'error'
+      });
     }
   };
 
@@ -84,7 +91,6 @@ export default function Collections() {
     setOpenDialog(false);
     setNewCollection({
       truck: '',
-      bins: [],
       generalWaste: 0,
       recyclables: 0,
       organic: 0,
@@ -93,12 +99,42 @@ export default function Collections() {
   };
 
   const handleCreateCollection = async () => {
+    // Client-side validation
+    if (!newCollection.truck) {
+      setSnackbar({
+        open: true,
+        message: 'Please select a truck for the collection',
+        severity: 'warning'
+      });
+      return;
+    }
+
+    // Check if truck is active
+    const selectedTruck = trucks.find(t => t._id === newCollection.truck);
+    if (selectedTruck && selectedTruck.status !== 'Active') {
+      setSnackbar({
+        open: true,
+        message: 'Cannot create collection with an inactive truck. Please select an active truck.',
+        severity: 'error'
+      });
+      return;
+    }
+
     try {
       await api.createCollection(newCollection);
       handleCloseDialog();
       loadData(); // Refresh data
+      setSnackbar({
+        open: true,
+        message: 'Collection created successfully!',
+        severity: 'success'
+      });
     } catch (err) {
-      setError("Failed to create collection");
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.error || 'Failed to create collection',
+        severity: 'error'
+      });
     }
   };
 
@@ -157,9 +193,7 @@ export default function Collections() {
         </Box>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-      {/* Overview Section */}
+      {/* Create Collection Dialog */}
       <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }} elevation={0}>
         <Box
           sx={{
@@ -281,7 +315,15 @@ export default function Collections() {
                     {new Date(collection.date).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    {collection.truck?.plate || 'N/A'}
+                    {(() => {
+                      // Try to get truck info from populated field first
+                      if (collection.truck?.plate) {
+                        return collection.truck.plate;
+                      }
+                      // If not populated, find truck by ID from loaded trucks
+                      const truck = trucks.find(t => t._id === collection.truck);
+                      return truck ? truck.plate : 'N/A';
+                    })()}
                   </TableCell>
                   <TableCell>{collection.generalWaste} tons</TableCell>
                   <TableCell>{collection.recyclables} tons</TableCell>
@@ -313,7 +355,7 @@ export default function Collections() {
         <DialogTitle>Create New Collection</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Truck</InputLabel>
                 <Select
@@ -329,7 +371,7 @@ export default function Collections() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 label="General Waste (tons)"
@@ -338,7 +380,7 @@ export default function Collections() {
                 onChange={(e) => setNewCollection({ ...newCollection, generalWaste: parseFloat(e.target.value) || 0 })}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 label="Recyclables (tons)"
@@ -347,7 +389,7 @@ export default function Collections() {
                 onChange={(e) => setNewCollection({ ...newCollection, recyclables: parseFloat(e.target.value) || 0 })}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 label="Organic Waste (tons)"
@@ -373,6 +415,22 @@ export default function Collections() {
           <Button onClick={handleCreateCollection} variant="contained">Create</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
