@@ -1,0 +1,48 @@
+{
+  "name": "ecorecycle-backend",
+  "version": "1.0.0",
+  "description": "Backend API for EcoRecycle Smart Waste Management System",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "jest --detectOpenHandles --forceExit",
+    "setup": "npm install && echo \"Backend setup completed successfully\""
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    }
+  },
+  "keywords": [
+    "recycling",
+    "waste-management",
+    "mern",
+    "express",
+    "mongodb",
+    "api"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "mongoose": "^8.8.4"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.28.3",
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.7",
+    "supertest": "^7.1.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "your-repository-url"
+  }
+}
